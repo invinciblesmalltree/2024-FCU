@@ -1,0 +1,120 @@
+#include <cmath>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <mavros_msgs/CommandBool.h>
+#include <mavros_msgs/CommandLong.h>
+#include <mavros_msgs/SetMode.h>
+#include <mavros_msgs/State.h>
+#include <ros/ros.h>
+#include <ros_tools/LidarPose.h>
+#include <ros_tools/message_subscriber.h>
+#include <ros_tools/target_class.hpp>
+#include <std_msgs/Int32.h>
+#include <vector>
+
+int main(int argc, char **argv) {
+    ros::init(argc, argv, "offboard");
+    ros::NodeHandle nh;
+
+    mavros_msgs::State current_state;
+    ros_tools::LidarPose lidar_pose_data;
+    std_msgs::Int32 barcode_data, offboard_order;
+
+    auto state_sub = subscribe(nh, "/mavros/state", current_state),
+         lidar_sub = subscribe(nh, "/lidar_data", lidar_pose_data),
+         barcode_sub = subscribe(nh, "/barcode_data", barcode_data),
+         offboard_sub = subscribe(nh, "/offboard_order", offboard_order);
+
+    auto local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(
+             "/mavros/setpoint_position/local", 10),
+         velocity_pub = nh.advertise<geometry_msgs::TwistStamped>(
+             "/mavros/setpoint_velocity/cmd_vel", 10),
+         led_pub = nh.advertise<std_msgs::Int32>("/led", 10),
+         servo_pub = nh.advertise<std_msgs::Int32>("/servo", 10),
+         screen_data_pub = nh.advertise<std_msgs::Int32>("/screen_data", 10);
+
+    auto arming_client =
+             nh.serviceClient<mavros_msgs::CommandBool>("/mavros/cmd/arming"),
+         command_client =
+             nh.serviceClient<mavros_msgs::CommandLong>("/mavros/cmd/command"),
+         set_mode_client =
+             nh.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
+    ros::Rate rate(20.0);
+
+    std::vector<target> targets = {target(0, 0, 1.5, 0)};
+
+    while (ros::ok() && !current_state.connected) {
+        ros::spinOnce();
+        rate.sleep();
+    }
+
+    mavros_msgs::SetMode offb_set_mode;
+    offb_set_mode.request.custom_mode = "OFFBOARD";
+
+    mavros_msgs::CommandBool arm_cmd;
+    arm_cmd.request.value = true;
+
+    ros::Time last_request = ros::Time::now();
+
+    size_t target_index = 0;
+    int mode = 0;
+
+    while (ros::ok() && !offboard_order.data) {
+        ros::spinOnce();
+        rate.sleep();
+    }
+
+    while (ros::ok()) {
+        if (!current_state.armed &&
+            (ros::Time::now() - last_request > ros::Duration(1.0))) {
+            if (arming_client.call(arm_cmd) && arm_cmd.response.success) {
+                ROS_INFO("Vehicle armed");
+            }
+            last_request = ros::Time::now();
+        } else if (current_state.mode != "OFFBOARD" &&
+                   (ros::Time::now() - last_request > ros::Duration(1.0))) {
+            if (set_mode_client.call(offb_set_mode) &&
+                offb_set_mode.response.mode_sent) {
+                ROS_INFO("Offboard enabled");
+                geometry_msgs::PoseStamped pose;
+                pose.pose.position.x = 0;
+                pose.pose.position.y = 0;
+                pose.pose.position.z = 0.5;
+                local_pos_pub.publish(pose);
+            }
+            last_request = ros::Time::now();
+        }
+        if (current_state.armed && current_state.mode == "OFFBOARD") {
+            break;
+        }
+        ros::spinOnce();
+        rate.sleep();
+    }
+
+    while (ros::ok()) {
+        if (mode == 0) { // 正常巡线
+            if (target_index >= targets.size()) {
+                ROS_INFO("All targets reached");
+                mavros_msgs::CommandLong command_srv;
+                command_srv.request.broadcast = false;
+                command_srv.request.command = 21;
+                command_srv.request.confirmation = 0;
+                command_srv.request.param4 = 0;
+                if (command_client.call(command_srv) &&
+                    command_srv.response.success) {
+                    ROS_INFO("Land command sent successfully");
+                }
+                break;
+            } else if (!targets[target_index].pos_check(lidar_pose_data)) {
+                targets[target_index].fly_to_target(local_pos_pub);
+            } else {
+                ROS_INFO("Reached target %zu", target_index);
+                target_index++;
+            }
+        }
+
+        ros::spinOnce();
+        rate.sleep();
+    }
+    return 0;
+}

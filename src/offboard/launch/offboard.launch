@@ -1,0 +1,8 @@
+<launch>
+    <include file="$(find ros_tools)/launch/lidar.launch" />
+    <!-- <node pkg="ros_tools" type="d435_node" name="d435_node" /> -->
+    <node pkg="vision" type="barcode_scanner.py" name="barcode_scanner" />
+    <node pkg="vision" type="led.py" name="led" />
+    <node pkg="screen" type="screen.py" name="screen" />
+    <node pkg="offboard" type="offboard_node" name="offboard_node" output="screen" />
+</launch>
