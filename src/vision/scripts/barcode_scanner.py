@@ -9,7 +9,7 @@ def main():
     pub = rospy.Publisher('barcode_data', Int32, queue_size=10)
     rate = rospy.Rate(10)
 
-    port = '/dev/ttyACM1'  # 串口设备路径
+    port = '/dev/scanner'  # 串口设备路径
     baudrate = 9600
     timeout = 1
     ser = serial.Serial(port, baudrate, timeout=timeout)

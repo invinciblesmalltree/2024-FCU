@@ -151,6 +151,7 @@ int main(int argc, char **argv) {
                 targets[target_index].fly_to_target(local_pos_pub);
             } else if (barcode_data.data) {
                 // 识别到二维码，触发动作
+                
                 ROS_INFO("Barcode detected: %d", barcode_data.data);
                 target_index++;
             }
