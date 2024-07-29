@@ -1,16 +1,22 @@
 #include <cmath>
-#include <vector>
-#include <ros/ros.h>
-#include <std_msgs/Int32.h>
-#include <mavros_msgs/State.h>
-#include <mavros_msgs/SetMode.h>
-#include <mavros_msgs/CommandBool.h>
-#include <mavros_msgs/CommandLong.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <mavros_msgs/CommandBool.h>
+#include <mavros_msgs/CommandLong.h>
+#include <mavros_msgs/SetMode.h>
+#include <mavros_msgs/State.h>
+#include <ros/ros.h>
 #include <ros_tools/LidarPose.h>
-#include <ros_tools/target_class.hpp>
 #include <ros_tools/message_subscriber.h>
+#include <ros_tools/target_class.hpp>
+#include <std_msgs/Int32.h>
+#include <vector>
+
+bool need_scan(int target_index) {
+    return target_index >= 1 && target_index <= 6 || target_index >= 9 &&
+           target_index <= 14 || target_index >= 16 && target_index <= 21 ||
+           target_index >= 24 && target_index <= 29;
+}
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "offboard");
@@ -41,47 +47,46 @@ int main(int argc, char **argv) {
              nh.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
     ros::Rate rate(20.0);
 
-    std::vector<target> targets = {        
-        target(0.0, 0.0, 1.35, 0), //起飞高度1.5,面西
+    std::vector<target> targets = {
+        target(0.0, 0.0, 1.35, 0), // 起飞高度1.5,面西
 
-        target(0.0, 0.75, 1.25, 0), //A3,上排
-        target(0.0, 1.25, 1.25, 0), //A2
-        target(0.0, 1.75, 1.25, 0), //A1
-        target(0.0, 1.75, 0.85, 0), //A4,下排
-        target(0.0, 1.25, 0.85, 0), //A5
-        target(0.0, 0.75, 0.85, 0), //A6
+        target(0.0, 0.75, 1.25, 0), // A3,上排
+        target(0.0, 1.25, 1.25, 0), // A2
+        target(0.0, 1.75, 1.25, 0), // A1
+        target(0.0, 1.75, 0.85, 0), // A4,下排
+        target(0.0, 1.25, 0.85, 0), // A5
+        target(0.0, 0.75, 0.85, 0), // A6
 
-        target(0.00, -0.25, 0.85, 0), //过面
+        target(0.00, -0.25, 0.85, 0), // 过面
         target(1.75, -0.25, 0.85, 0),
-        
-        target(1.75, 0.75, 0.85, 0), //C6,下排
-        target(1.75, 1.25, 0.85, 0), //C5
-        target(1.75, 1.75, 0.85, 0), //C4
-        target(1.75, 1.75, 1.25, 0), //C1,上排
-        target(1.75, 1.25, 1.25, 0), //C2
-        target(1.75, 0.75, 1.25, 0), //C3
 
-        target(1.75, 0.75, 1.25, M_PI), //转向
+        target(1.75, 0.75, 0.85, 0), // C6,下排
+        target(1.75, 1.25, 0.85, 0), // C5
+        target(1.75, 1.75, 0.85, 0), // C4
+        target(1.75, 1.75, 1.25, 0), // C1,上排
+        target(1.75, 1.25, 1.25, 0), // C2
+        target(1.75, 0.75, 1.25, 0), // C3
 
-        target(1.75, 0.75, 1.25, M_PI), //B3,上排
-        target(1.75, 1.25, 1.25, M_PI), //B2
-        target(1.75, 1.75, 1.25, M_PI), //B1
-        target(1.75, 1.75, 0.85, M_PI), //B4,下排
-        target(1.75, 1.25, 0.85, M_PI), //B5
-        target(1.75, 0.75, 0.85, M_PI), //B6
+        target(1.75, 0.75, 1.25, M_PI), // 转向
 
-        target(1.75, -0.25, 0.85, M_PI), //过面
+        target(1.75, 0.75, 1.25, M_PI), // B3,上排
+        target(1.75, 1.25, 1.25, M_PI), // B2
+        target(1.75, 1.75, 1.25, M_PI), // B1
+        target(1.75, 1.75, 0.85, M_PI), // B4,下排
+        target(1.75, 1.25, 0.85, M_PI), // B5
+        target(1.75, 0.75, 0.85, M_PI), // B6
+
+        target(1.75, -0.25, 0.85, M_PI), // 过面
         target(3.50, -0.25, 0.85, M_PI),
 
-        target(3.50, 0.75, 0.85, M_PI), //D6,下排
-        target(3.50, 1.25, 0.85, M_PI), //D5
-        target(3.50, 1.75, 0.85, M_PI), //D4
-        target(3.50, 1.75, 1.25, M_PI), //D1,上排
-        target(3.50, 1.25, 1.25, M_PI), //D2
-        target(3.50, 0.75, 1.25, M_PI), //D3
+        target(3.50, 0.75, 0.85, M_PI), // D6,下排
+        target(3.50, 1.25, 0.85, M_PI), // D5
+        target(3.50, 1.75, 0.85, M_PI), // D4
+        target(3.50, 1.75, 1.25, M_PI), // D1,上排
+        target(3.50, 1.25, 1.25, M_PI), // D2
+        target(3.50, 0.75, 1.25, M_PI), // D3
 
-        target(3.50, 2.5, 1.25, M_PI), 
-        target(3.50, 2.5, 0.10, M_PI)//降落
+        target(3.50, 2.5, 1.25, M_PI),   target(3.50, 2.5, 0.10, M_PI) // 降落
     };
 
     while (ros::ok() && !current_state.connected) {
@@ -146,7 +151,17 @@ int main(int argc, char **argv) {
                     ROS_INFO("Land command sent successfully");
                 }
                 break;
-            } else if (barcode_data.data == -1) {
+            } else if (!targets[target_index].pos_check(lidar_pose_data)) {
+                targets[target_index].fly_to_target(local_pos_pub);
+            } else {
+                ROS_INFO("Reached target %zu", target_index);
+                target_index++;
+                if (need_scan(target_index)) {
+                    mode = 1;
+                }
+            }
+        } else if (mode == 1) { // 二维码扫描
+            if (barcode_data.data <= 0) {
                 // 未识别到二维码，巡线
                 targets[target_index].fly_to_target(local_pos_pub);
             } else if (barcode_data.data) {
@@ -154,6 +169,7 @@ int main(int argc, char **argv) {
                 
                 ROS_INFO("Barcode detected: %d", barcode_data.data);
                 target_index++;
+                mode = 0;
             }
         }
         ros::spinOnce();
