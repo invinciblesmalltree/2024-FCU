@@ -80,7 +80,8 @@ int main(int argc, char **argv) {
         target(3.50, 1.25, 1.25, M_PI), //D2
         target(3.50, 0.75, 1.25, M_PI), //D3
 
-        target(3.50, 2.5, 1.25, M_PI), //降落
+        target(3.50, 2.5, 1.25, M_PI), 
+        target(3.50, 2.5, 0.10, M_PI)//降落
     };
 
     while (ros::ok() && !current_state.connected) {
@@ -145,10 +146,10 @@ int main(int argc, char **argv) {
                     ROS_INFO("Land command sent successfully");
                 }
                 break;
-            } else if (barcode == -1) {
+            } else if (barcode_data.data == -1) {
                 // 未识别到二维码，巡线
                 targets[target_index].fly_to_target(local_pos_pub);
-            } else if (barcode_data) {
+            } else if (barcode_data.data) {
                 // 识别到二维码，触发动作
                 ROS_INFO("Barcode detected: %d", barcode_data.data);
                 target_index++;

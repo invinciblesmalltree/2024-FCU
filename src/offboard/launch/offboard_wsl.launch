@@ -2,5 +2,5 @@
     <node pkg="ros_tools" type="pose_data_node" name="pose_data_node" />
     <node pkg="vision" type="barcode_scanner.py" name="barcode_scanner" />
     <node pkg="screen" type="screen.py" name="screen" />
-    <node pkg="offboard" type="offboard_node" name="offboard_node"  output="screen" />
+    <node pkg="offboard" type="offboard" name="offboard"  output="screen" />
 </launch>
