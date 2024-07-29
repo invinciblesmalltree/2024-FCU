@@ -13,7 +13,7 @@ def callback(data):
 
 if __name__ == "__main__":
     rospy.init_node("laser_node")
-    pub = rospy.Subscriber("laser_data", Int32, callback)
+    pub = rospy.Subscriber("barcode_data", Int32, callback)
 
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(11, GPIO.OUT)
