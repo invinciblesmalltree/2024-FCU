@@ -6,9 +6,10 @@ import Jetson.GPIO as GPIO
 
 
 def callback(data):
-    GPIO.output(11, GPIO.HIGH)
-    rospy.sleep(0.5)
-    GPIO.output(11, GPIO.LOW)
+    if data.data != -1:
+        GPIO.output(11, GPIO.HIGH)
+        rospy.sleep(0.5)
+        GPIO.output(11, GPIO.LOW)
 
 
 if __name__ == "__main__":
