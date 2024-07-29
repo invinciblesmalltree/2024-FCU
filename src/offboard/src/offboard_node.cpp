@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
         target(1.75, 1.0, 1.25, 0), //C2
         target(1.75, 1.5, 1.25, 0), //C3
 
-        target(1.75, 0.5, 0.85, M_PI), //转向
+        target(1.75, 0.5, 1.25, M_PI), //转向
 
         target(1.75, 0.5, 1.25, M_PI), //B3,上排
         target(1.75, 1.0, 1.25, M_PI), //B2
