@@ -13,8 +13,9 @@
 #include <vector>
 
 bool need_scan(int target_index) {
-    return target_index >= 1 && target_index <= 6 || target_index >= 9 &&
-           target_index <= 14 || target_index >= 16 && target_index <= 21 ||
+    return target_index >= 1 && target_index <= 6 ||
+           target_index >= 9 && target_index <= 14 ||
+           target_index >= 16 && target_index <= 21 ||
            target_index >= 24 && target_index <= 29;
 }
 
@@ -26,9 +27,19 @@ int main(int argc, char **argv) {
     ros_tools::LidarPose lidar_pose_data;
     std_msgs::Int32 barcode_data, offboard_order;
 
+    bool scanned = false;
+
+    auto barcode_cb = [&barcode_data,
+                       &scanned](const std_msgs::Int32::ConstPtr &msg) {
+        barcode_data = *msg;
+        if (barcode_data.data != -1)
+            scanned = true;
+    };
+
     auto state_sub = subscribe(nh, "/mavros/state", current_state),
          lidar_sub = subscribe(nh, "/lidar_data", lidar_pose_data),
-         barcode_sub = subscribe(nh, "/barcode_data", barcode_data),
+         barcode_sub =
+             nh.subscribe<std_msgs::Int32>("/barcode_data", 10, barcode_cb),
          offboard_sub = subscribe(nh, "/offboard_order", offboard_order);
 
     auto local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(
@@ -161,14 +172,15 @@ int main(int argc, char **argv) {
                 }
             }
         } else if (mode == 1) { // 二维码扫描
-            if (barcode_data.data <= 0) {
-                // 未识别到二维码，巡线
-                targets[target_index].fly_to_target(local_pos_pub);
-            } else if (barcode_data.data) {
+            if (scanned) {
                 // 识别到二维码，触发动作
                 ROS_INFO("Barcode detected: %d", barcode_data.data);
                 target_index++;
                 mode = 0;
+                scanned = false;
+            } else {
+                // 未识别到二维码，巡线
+                targets[target_index].fly_to_target(local_pos_pub);
             }
         }
         ros::spinOnce();

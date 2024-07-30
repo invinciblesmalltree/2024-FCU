@@ -1,6 +1,6 @@
 <launch>
     <node pkg="ros_tools" type="pose_data_node" name="pose_data_node" />
-    <node pkg="vision" type="barcode_scanner_vision.py" name="barcode_scanner_vision" />
+    <!-- <node pkg="vision" type="barcode_scanner_vision.py" name="barcode_scanner_vision" /> -->
     <!-- <node pkg="screen" type="screen.py" name="screen" /> -->
     <node pkg="offboard" type="offboard" name="offboard"  output="screen" />
 </launch>
