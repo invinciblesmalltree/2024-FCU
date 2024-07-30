@@ -6,7 +6,7 @@ from screen.msg import goods_info
 import json
 
 # 读取json文件
-with open("goods_info.json", "r") as json_file:
+with open("/home/orangepi/ros/configs/goods_info.json", "r") as json_file:
     json_data = json.load(json_file)
 
 
