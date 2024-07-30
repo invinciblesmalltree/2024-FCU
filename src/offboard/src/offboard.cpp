@@ -9,7 +9,7 @@
 #include <ros_tools/LidarPose.h>
 #include <ros_tools/message_subscriber.h>
 #include <ros_tools/target_class.hpp>
-#include <screen/goods_info.h>
+#include <trx_screen/goods_info.h>
 #include <std_msgs/Int32.h>
 #include <string>
 #include <vector>
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
     auto local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(
              "/mavros/setpoint_position/local", 10),
-         screen_data_pub = nh.advertise<screen::goods_info>("/screen_data", 10);
+         screen_data_pub = nh.advertise<trx_screen::goods_info>("/screen_data", 10);
 
     auto arming_client =
              nh.serviceClient<mavros_msgs::CommandBool>("/mavros/cmd/arming"),
@@ -184,7 +184,7 @@ wait_for_command:
             if (scanned) {
                 // 识别到二维码，触发动作
                 ROS_INFO("Barcode detected: %d", barcode_data.data);
-                screen::goods_info goods_info;
+                trx_screen::goods_info goods_info;
                 goods_info.value = barcode_data.data;
                 goods_info.address = addresses[target_index];
                 screen_data_pub.publish(goods_info);

@@ -2,7 +2,7 @@
 import rospy
 import serial
 from std_msgs.msg import Int32
-from screen.msg import goods_info
+from trx_screen.msg import goods_info
 import json
 
 json_data = {

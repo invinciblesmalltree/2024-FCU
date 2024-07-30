@@ -4,6 +4,6 @@
     <node pkg="vision" type="barcode_scanner.py" name="barcode_scanner" />
     <node pkg="vision" type="laser.py" name="laser" />
     <node pkg="vision" type="led.py" name="led" />
-    <!-- <node pkg="screen" type="screen.py" name="screen" /> -->
+    <!-- <node pkg="trx_screen" type="screen.py" name="screen" /> -->
     <node pkg="offboard" type="offboard" name="offboard" output="screen" />
 </launch>
