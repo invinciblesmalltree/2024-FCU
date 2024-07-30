@@ -66,16 +66,16 @@ def get_address_by_value(value):
 def search_all():
     i = 0
     for address, value in json_data.items():
-        ser.write((f"page4.n{i}.val={value}" + b"\xff\xff\xff").encode())
+        ser.write(f"page4.n{i}.val={value}".encode("utf-8") + b"\xff\xff\xff")
         i = i + 1
 
 
 # 货物编号为1～24的数值；坐标信息为A1~A6、B1~B6、C1~C6、D1~D6
 def goods_callback(msg):
     update_json_value(msg.address, msg.value)
-    ser.write((f"page1.t4.txt={msg.value}" + b"\xff\xff\xff").encode())
+    ser.write(f"page1.t4.txt={msg.value}".encode("utf-8") + b"\xff\xff\xff")
     ser.write(
-        (f"page1.t6.txt={msg.address}" + b"\xff\xff\xff").encode()
+        f"page1.t6.txt={msg.address}".encode("utf-8") + b"\xff\xff\xff"
     )  # 实时发送编号及坐标至串口屏
 
 
@@ -88,7 +88,7 @@ rospy.Subscriber("/barcode_data", goods_info, goods_callback)
 
 # 主程序
 rospy.init_node("screen", anonymous=True)
-ser.write(b"rest\xff\xff\xff".encode())  # 重置屏幕
+ser.write(b"rest\xff\xff\xff")  # 重置屏幕
 
 while not rospy.is_shutdown():
     if ser.in_waiting > 0:
@@ -103,9 +103,8 @@ while not rospy.is_shutdown():
             elif line.startwith("search"):  # 评委查询编号
                 num = int(line[2:])
                 ser.write(
-                    (
-                        f'page3.t4.txt="{get_address_by_value(num)}"' + b"\xff\xff\xff"
-                    ).encode()
+                    f'page3.t4.txt="{get_address_by_value(num)}"'.encode("utf-8")
+                    + b"\xff\xff\xff"
                 )  # 评委查询编号后发送坐标至串口屏
             elif line == "search_all":  # 串口屏显示所有货物信息
                 search_all()
