@@ -10,17 +10,17 @@ with open('goods_info.json', 'r') as json_file:
     json_data = json.load(json_file)
 
 # 查询value
-def query_value(element_name):
-    element = json_data.get(element_name)
-    return element['value'] if element is not None else None
+def query_value(address):
+    key = json_data.get(address)
+    return key['value'] if key is not None else None
 
 # 查询coordinate
-def query_coordinate(element_name):
-    element = json_data.get(element_name)
-    return element['coordinate'] if element is not None else None
+def query_coordinate(address):
+    key = json_data.get(address)
+    return key['coordinate'] if key is not None else None
 
 # 更新value
-def update_json_value(json_data, address, new_value):
+def update_json_value(address, new_value):
     if address in json_data:
         json_data[address] = new_value
         return json_data
@@ -43,7 +43,7 @@ def search_all():
 
 # 货物编号为1～24的数值；坐标信息为A1~A6、B1~B6、C1~C6、D1~D6
 def goods_callback(msg):
-    update_json_value(json_data, msg.address, msg.value)
+    update_json_value(msg.address, msg.value)
     ser.write(b"page1.t4.txt=%d\xff\xff\xff",msg.value)
     ser.write(b"page1.t6.txt=%d\xff\xff\xff",msg.address) # 实时发送编号及坐标至串口屏
 
