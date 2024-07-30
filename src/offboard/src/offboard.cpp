@@ -80,19 +80,19 @@ int main(int argc, char **argv) {
 
         target(1.75, 0.75, 1.25, M_PI), // 转向
 
-        target(1.75, 0.75, 1.25, M_PI), // B3,上排
+        target(1.75, 0.75, 1.25, M_PI), // B1,上排
         target(1.75, 1.25, 1.25, M_PI), // B2
-        target(1.75, 1.75, 1.25, M_PI), // B1
-        target(1.75, 1.75, 0.85, M_PI), // B4,下排
+        target(1.75, 1.75, 1.25, M_PI), // B3
+        target(1.75, 1.75, 0.85, M_PI), // B6,下排
         target(1.75, 1.25, 0.85, M_PI), // B5
-        target(1.75, 0.75, 0.85, M_PI), // B6
+        target(1.75, 0.75, 0.85, M_PI), // B4
 
         target(1.75, -0.25, 0.85, M_PI), // 过面
         target(3.50, -0.25, 0.85, M_PI),
 
-        target(3.50, 0.75, 0.85, M_PI), // D6,下排
+        target(3.50, 0.75, 0.85, M_PI), // D4,下排
         target(3.50, 1.25, 0.85, M_PI), // D5
-        target(3.50, 1.75, 0.85, M_PI), // D4
+        target(3.50, 1.75, 0.85, M_PI), // D6
         target(3.50, 1.75, 1.25, M_PI), // D1,上排
         target(3.50, 1.25, 1.25, M_PI), // D2
         target(3.50, 0.75, 1.25, M_PI), // D3
