@@ -121,6 +121,9 @@ int main(int argc, char **argv) {
         rate.sleep();
     }
 
+    if (offboard_order.data == 2)
+        mode = 2;
+
     while (ros::ok()) {
         if (!current_state.armed &&
             (ros::Time::now() - last_request > ros::Duration(1.0))) {
@@ -183,6 +186,7 @@ int main(int argc, char **argv) {
                 // 未识别到二维码，巡线
                 targets[target_index].fly_to_target(local_pos_pub);
             }
+        } else if (mode == 2) { // 发挥部分
         }
         ros::spinOnce();
         rate.sleep();
