@@ -162,14 +162,15 @@ int main(int argc, char **argv) {
                     ROS_INFO("Land command sent successfully");
                 }
                 break;
-            } else if (!targets[target_index].pos_check(lidar_pose_data)) {
+            } else if (!targets[target_index].pos_check(lidar_pose_data, 0.05,
+                                                        0.05, 0.02)) {
                 targets[target_index].fly_to_target(local_pos_pub);
             } else {
                 ROS_INFO("Reached target %zu", target_index);
-                target_index++;
                 if (need_scan(target_index)) {
                     mode = 1;
                 }
+                target_index++;
             }
         } else if (mode == 1) { // 二维码扫描
             if (scanned) {
