@@ -104,15 +104,18 @@ json_data={
     }
 }
 
+
 # 查询value
 def query_value(address):
     key = json_data.get(address)
-    return key['value'] if key is not None else None
+    return key["value"] if key is not None else None
+
 
 # 查询coordinate
 def query_coordinate(address):
     key = json_data.get(address)
-    return key['coordinate'] if key is not None else None
+    return key["coordinate"] if key is not None else None
+
 
 # 更新value
 def update_json_value(address, new_value):
@@ -124,23 +127,27 @@ def update_json_value(address, new_value):
         raise ValueError(f"Key '{address}' not found in JSON data.")
         # return json_data
 
+
 # 评委根据值查询地址
 def get_address_by_value(value):
     address = [key for key, val in json_data.items() if val == value]
     return address
 
+
 # 所有货物信息发送到串口屏
 def search_all():
-    i=0
+    i = 0
     for address, value in json_data.items():
         ser.write(f"page4.n{i}.val={value}\xff\xff\xff".encode())
-        i=i+1
+        i = i + 1
+
 
 # 货物编号为1～24的数值；坐标信息为A1~A6、B1~B6、C1~C6、D1~D6
 def goods_callback(msg):
     update_json_value(msg.address, msg.value)
-    ser.write(b"page1.t4.txt=%d\xff\xff\xff",msg.value)
-    ser.write(b"page1.t6.txt=%d\xff\xff\xff",msg.address) # 实时发送编号及坐标至串口屏
+    ser.write(b"page1.t4.txt=%d\xff\xff\xff", msg.value)
+    ser.write(b"page1.t6.txt=%d\xff\xff\xff", msg.address)  # 实时发送编号及坐标至串口屏
+
 
 # 配置串口
 ser = serial.Serial("/dev/AMA0", baudrate=9600, timeout=1)
@@ -151,22 +158,24 @@ rospy.Subscriber("/barcode_data", goods_info, goods_callback)
 
 # 主程序
 rospy.init_node("screen", anonymous=True)
-ser.write(b"rest\xff\xff\xff") # 重置屏幕
+ser.write(b"rest\xff\xff\xff")  # 重置屏幕
 
 while not rospy.is_shutdown():
     if ser.in_waiting > 0:
         try:
-            line = ser.readline().decode("utf-8").strip() # 读取串口数据
-            if line == "offboard1": # 1盘点
+            line = ser.readline().decode("utf-8").strip()  # 读取串口数据
+            if line == "offboard1":  # 1盘点
                 rospy.loginfo("offboard cmd1 from serial")
                 pub.publish(Int32(1))
-            elif line == "offboard2": # 2定向
+            elif line == "offboard2":  # 2定向
                 rospy.loginfo("offboard cmd2 from serial")
                 pub.publish(Int32(2))
-            elif line.startwith("search"): # 评委查询编号
-                num=int(line[2:])
-                ser.write(b"page3.t4.txt=\"%s\"\xff\xff\xff",get_address_by_value(num)) # 评委查询编号后发送坐标至串口屏
-            elif line == "search_all": # 串口屏显示所有货物信息
+            elif line.startwith("search"):  # 评委查询编号
+                num = int(line[2:])
+                ser.write(
+                    b'page3.t4.txt="%s"\xff\xff\xff', get_address_by_value(num)
+                )  # 评委查询编号后发送坐标至串口屏
+            elif line == "search_all":  # 串口屏显示所有货物信息
                 search_all()
         except Exception as e:
             pass
