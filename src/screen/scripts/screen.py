@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
+
+# 注：评委输入编号1-24，返回地址A1-D6
 
 import rospy
 import serial
