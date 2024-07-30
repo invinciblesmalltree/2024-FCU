@@ -115,6 +115,7 @@ catkin_package(
 #  LIBRARIES screen
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
+  CATKIN_DEPENDS message_runtime std_msgs roscpp rospy
 )
 
 ###########
@@ -126,7 +127,6 @@ catkin_package(
 include_directories(
 # include
 # ${catkin_INCLUDE_DIRS}
-    ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -172,10 +172,6 @@ include_directories(
 #   scripts/my_python_script
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
-catkin_install_python(PROGRAMS
-    scripts/screen.py
-    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
