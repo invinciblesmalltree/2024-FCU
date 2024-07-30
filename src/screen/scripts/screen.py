@@ -5,12 +5,42 @@
 import rospy
 import serial
 from std_msgs.msg import Int32
+import json
+
+
+# json文件路径
+json_file_path = 'goods_info.json'
+address_list = ['A3', 'A2', 'A1', 'A4', 'A5', 'A6',
+                'C6', 'C5', 'C4', 'C1', 'C2', 'C3',
+                'B1', 'B2', 'B3', 'B6', 'B5', 'B4',
+                'D4', 'D5', 'D6', 'D1', 'D2', 'D3']
+index = 0
+
+# 更新货物信息
+def update_goods_data(file_path, address, value):
+    with open(file_path, 'r') as json_file:
+        data = json.load(json_file)
+    if address in data[0]:
+        data[0][address] = value
+        with open(file_path, 'w') as json_file:
+            json.dump(data, json_file, indent=4)
+        rospy.loginfo(f"Updated value for address {address}: {value}")
+    else:
+        rospy.loginfo(f"Address {address} not found in JSON data.")
+
+# 评委根据值查询地址
+def get_address_by_value(file_path, value):
+    with open(file_path, 'r') as json_file:
+        data = json.load(json_file)
+    for address, stored_value in data[0].items():
+        if stored_value == value:
+            return address
+    return None
 
 # 货物编号为1～24的数值；坐标信息为A1~A6、B1~B6、C1~C6、D1~D6
 def goods_callback(msg):
-    if msg.data != 1:
-        goods_list.append(msg.data)
-        rospy.loginfo("goods_data: %d" % msg.data)
+    update_goods_data(json_file_path, address_list[index], msg.data)
+    index += 1
 
 # 配置串口
 ser = serial.Serial("/dev/AMA0", baudrate=9600, timeout=1)
