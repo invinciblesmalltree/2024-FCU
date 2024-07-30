@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
              "/mavros/setpoint_velocity/cmd_vel", 10),
          led_pub = nh.advertise<std_msgs::Int32>("/led", 10),
          servo_pub = nh.advertise<std_msgs::Int32>("/servo", 10),
-         screen_data_pub = nh.advertise<std_msgs::Int32>("/screen_data", 10);
+         screen_data_pub = nh.advertise<screen::goods_info>("/screen_data", 10);
 
     auto arming_client =
              nh.serviceClient<mavros_msgs::CommandBool>("/mavros/cmd/arming"),
