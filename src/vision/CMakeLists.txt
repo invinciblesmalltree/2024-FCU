@@ -169,6 +169,7 @@ include_directories(
 catkin_install_python(
     PROGRAMS scripts/barcode_scanner_vision.py
              scripts/barcode_scanner.py
+             scripts/laser.py
              scripts/led.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
