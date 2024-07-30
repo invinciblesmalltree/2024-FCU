@@ -84,7 +84,7 @@ ser = serial.Serial("/dev/ttyS6", baudrate=9600, timeout=1)
 # 起飞发布，发1为盘点程序，发2为定向程序
 pub = rospy.Publisher("/offboard_order", Int32, queue_size=10)
 # 从scanner订阅货物信息
-rospy.Subscriber("/barcode_data", goods_info, goods_callback)
+rospy.Subscriber("/goods_info", goods_info, goods_callback)
 
 # 主程序
 rospy.init_node("screen", anonymous=True)

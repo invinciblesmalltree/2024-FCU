@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
     auto local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(
              "/mavros/setpoint_position/local", 10),
-         screen_data_pub = nh.advertise<trx_screen::goods_info>("/screen_data", 10);
+         goods_info_pub = nh.advertise<trx_screen::goods_info>("/goods_info", 10);
 
     auto arming_client =
              nh.serviceClient<mavros_msgs::CommandBool>("/mavros/cmd/arming"),
@@ -187,7 +187,7 @@ wait_for_command:
                 trx_screen::goods_info goods_info;
                 goods_info.value = barcode_data.data;
                 goods_info.address = addresses[target_index];
-                screen_data_pub.publish(goods_info);
+                goods_info_pub.publish(goods_info);
                 target_index++;
                 mode = 0;
                 scanned = false;
