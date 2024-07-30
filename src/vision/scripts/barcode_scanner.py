@@ -23,8 +23,6 @@ if __name__ == "__main__":
             barcode = int(data)
             rospy.loginfo("Barcode scanned: %d" % barcode)
             pub.publish(barcode)
-        else:
-            pub.publish(-1)
 
         rate.sleep()
 
