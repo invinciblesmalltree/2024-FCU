@@ -1,85 +1,78 @@
 # !/usr/bin/env python3
-
-# 注：评委输入编号1-24，返回地址A1-D6
-
 import rospy
 import serial
 from std_msgs.msg import Int32
+from screen.msg import goods_info
 import json
 
+# 读取json文件
+with open('goods_info.json', 'r') as json_file:
+    json_data = json.load(json_file)
 
-# json文件路径
-json_file_path = 'goods_info.json'
-address_list = ['A3', 'A2', 'A1', 'A4', 'A5', 'A6',
-                'C6', 'C5', 'C4', 'C1', 'C2', 'C3',
-                'B1', 'B2', 'B3', 'B6', 'B5', 'B4',
-                'D4', 'D5', 'D6', 'D1', 'D2', 'D3']
-index = 0
+# 查询value
+def query_value(element_name):
+    element = json_data.get(element_name)
+    return element['value'] if element is not None else None
 
-# 更新货物信息
-def update_goods_data(file_path, address, value):
-    with open(file_path, 'r') as json_file:
-        data = json.load(json_file)
-    if address in data[0]:
-        data[0][address] = value
-        with open(file_path, 'w') as json_file:
-            json.dump(data, json_file, indent=4)
-        rospy.loginfo(f"Updated value for address {address}: {value}")
+# 查询coordinate
+def query_coordinate(element_name):
+    element = json_data.get(element_name)
+    return element['coordinate'] if element is not None else None
+
+# 更新value
+def update_json_value(json_data, address, new_value):
+    if address in json_data:
+        json_data[address] = new_value
+        return json_data
     else:
-        rospy.loginfo(f"Address {address} not found in JSON data.")
+        # 如果键不存在，可以选择抛出异常或者返回原始数据
+        raise ValueError(f"Key '{address}' not found in JSON data.")
+        # return json_data
 
 # 评委根据值查询地址
-def get_address_by_value(file_path, value):
-    with open(file_path, 'r') as json_file:
-        data = json.load(json_file)
-    for address, stored_value in data[0].items():
-        if stored_value == value:
-            return address
-    return None
+def get_address_by_value(json_data, value):
+    address = [key for key, val in json_data.items() if val == value]
+    return address
+
+# 所有货物信息发送到串口屏
+def search_all():
+    i=0
+    for address, value in json_data.items():
+        ser.write(f"page4.n{i}.val={value}\xff\xff\xff".encode())
+        i=i+1
 
 # 货物编号为1～24的数值；坐标信息为A1~A6、B1~B6、C1~C6、D1~D6
 def goods_callback(msg):
-    update_goods_data(json_file_path, address_list[index], msg.data)
-    ser.write(b"page1.t4.txt=%d\xff\xff\xff",msg.data) # 实时发送编号及坐标至串口屏
-    ser.write(b"page1.t6.txt=%d\xff\xff\xff",address_list[index])
-    index += 1
+    update_json_value(json_data, msg.address, msg.value)
+    ser.write(b"page1.t4.txt=%d\xff\xff\xff",msg.value)
+    ser.write(b"page1.t6.txt=%d\xff\xff\xff",msg.address) # 实时发送编号及坐标至串口屏
 
 # 配置串口
 ser = serial.Serial("/dev/AMA0", baudrate=9600, timeout=1)
 # 起飞发布，发1为盘点程序，发2为定向程序
 pub = rospy.Publisher("/offboard_order", Int32, queue_size=10)
 # 从scanner订阅货物信息
-rospy.Subscriber("/barcode_data", Int32, goods_callback)
+rospy.Subscriber("/barcode_data", goods_info, goods_callback)
 
 # 主程序
 rospy.init_node("screen", anonymous=True)
 ser.write(b"rest\xff\xff\xff") # 重置屏幕
 
-# 创建货物列表
-goods_list = []
-
 while not rospy.is_shutdown():
     if ser.in_waiting > 0:
         try:
             line = ser.readline().decode("utf-8").strip() # 读取串口数据
-            if line == "offboard1":
+            if line == "offboard1": # 1盘点
                 rospy.loginfo("offboard cmd1 from serial")
                 pub.publish(Int32(1))
-            elif line == "offboard2":
+            elif line == "offboard2": # 2定向
                 rospy.loginfo("offboard cmd2 from serial")
                 pub.publish(Int32(2))
-            elif line.startwith("search"):
+            elif line.startwith("search"): # 评委查询编号
                 num=int(line[2:])
                 ser.write(b"page3.t4.txt=\"%s\"\xff\xff\xff",get_address_by_value(json_file_path,num)) # 评委查询编号后发送坐标至串口屏
-            elif line == "search_all":
-                 # Load the JSON data
-                with open(json_file_path, 'r') as json_file:
-                    data = json.load(json_file)
-
-                # Send all goods information in the order of address_list
-                for i, address in enumerate(address_list):
-                    value = data[0].get(address, -1)
-                    ser.write(f"page4.n{i}.val={value}\xff\xff\xff".encode())
+            elif line == "search_all": # 串口屏显示所有货物信息
+                search_all()
         except Exception as e:
             pass
 
