@@ -30,7 +30,7 @@ def update_json_value(json_data, address, new_value):
         # return json_data
 
 # 评委根据值查询地址
-def get_address_by_value(json_data, value):
+def get_address_by_value(value):
     address = [key for key, val in json_data.items() if val == value]
     return address
 
@@ -70,7 +70,7 @@ while not rospy.is_shutdown():
                 pub.publish(Int32(2))
             elif line.startwith("search"): # 评委查询编号
                 num=int(line[2:])
-                ser.write(b"page3.t4.txt=\"%s\"\xff\xff\xff",get_address_by_value(json_file_path,num)) # 评委查询编号后发送坐标至串口屏
+                ser.write(b"page3.t4.txt=\"%s\"\xff\xff\xff",get_address_by_value(num)) # 评委查询编号后发送坐标至串口屏
             elif line == "search_all": # 串口屏显示所有货物信息
                 search_all()
         except Exception as e:
