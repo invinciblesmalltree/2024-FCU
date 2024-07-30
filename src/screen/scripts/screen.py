@@ -40,6 +40,8 @@ def get_address_by_value(file_path, value):
 # 货物编号为1～24的数值；坐标信息为A1~A6、B1~B6、C1~C6、D1~D6
 def goods_callback(msg):
     update_goods_data(json_file_path, address_list[index], msg.data)
+    ser.write(b"page1.t4.txt=%d\xff\xff\xff",msg.data) # 实时发送编号及坐标至串口屏
+    ser.write(b"page1.t6.txt=%d\xff\xff\xff",address_list[index])
     index += 1
 
 # 配置串口
@@ -48,7 +50,6 @@ ser = serial.Serial("/dev/AMA0", baudrate=9600, timeout=1)
 pub = rospy.Publisher("/offboard_order", Int32, queue_size=10)
 # 从scanner订阅货物信息
 rospy.Subscriber("/barcode_data", Int32, goods_callback)
-
 
 # 主程序
 rospy.init_node("screen", anonymous=True)
@@ -67,6 +68,18 @@ while not rospy.is_shutdown():
             elif line == "offboard2":
                 rospy.loginfo("offboard cmd2 from serial")
                 pub.publish(Int32(2))
+            elif line.startwith("search"):
+                num=int(line[2:])
+                ser.write(b"page3.t4.txt=\"%s\"\xff\xff\xff",get_address_by_value(json_file_path,num)) # 评委查询编号后发送坐标至串口屏
+            elif line == "search_all":
+                 # Load the JSON data
+                with open(json_file_path, 'r') as json_file:
+                    data = json.load(json_file)
+
+                # Send all goods information in the order of address_list
+                for i, address in enumerate(address_list):
+                    value = data[0].get(address, -1)
+                    ser.write(f"page4.n{i}.val={value}\xff\xff\xff".encode())
         except Exception as e:
             pass
 
