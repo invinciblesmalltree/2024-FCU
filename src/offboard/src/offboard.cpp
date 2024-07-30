@@ -9,7 +9,9 @@
 #include <ros_tools/LidarPose.h>
 #include <ros_tools/message_subscriber.h>
 #include <ros_tools/target_class.hpp>
+#include <screen/goods_info.h>
 #include <std_msgs/Int32.h>
+#include <string>
 #include <vector>
 
 bool need_scan(int target_index) {
@@ -100,6 +102,11 @@ int main(int argc, char **argv) {
         target(3.50, 2.5, 1.25, M_PI),   target(3.50, 2.5, 0.10, M_PI) // 降落
     };
 
+    std::vector<std::string> addresses = {
+        "",   "A3", "A2", "A1", "A4", "A5", "A6", "",   "",   "C6",
+        "C5", "C4", "C1", "C2", "C3", "",   "B1", "B2", "B3", "B6",
+        "B5", "B4", "",   "",   "D4", "D5", "D6", "D1", "D2", "D3"};
+
     while (ros::ok() && !current_state.connected) {
         ros::spinOnce();
         rate.sleep();
@@ -172,13 +179,17 @@ int main(int argc, char **argv) {
                 ROS_INFO("Reached target %zu", target_index);
                 if (need_scan(target_index)) {
                     mode = 1;
-                }
-                target_index++;
+                } else
+                    target_index++;
             }
         } else if (mode == 1) { // 二维码扫描
             if (scanned) {
                 // 识别到二维码，触发动作
                 ROS_INFO("Barcode detected: %d", barcode_data.data);
+                screen::goods_info goods_info;
+                goods_info.value = barcode_data.data;
+                goods_info.address = addresses[target_index];
+                screen_data_pub.publish(goods_info);
                 target_index++;
                 mode = 0;
                 scanned = false;
