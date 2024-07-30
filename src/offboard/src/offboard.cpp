@@ -31,8 +31,7 @@ int main(int argc, char **argv) {
 
     bool scanned = false;
 
-    auto barcode_cb = [&barcode_data,
-                       &scanned](const std_msgs::Int32::ConstPtr &msg) {
+    auto barcode_cb = [&barcode_data, &scanned](const auto &msg) {
         barcode_data = *msg;
         if (barcode_data.data != -1)
             scanned = true;
@@ -46,10 +45,6 @@ int main(int argc, char **argv) {
 
     auto local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(
              "/mavros/setpoint_position/local", 10),
-         velocity_pub = nh.advertise<geometry_msgs::TwistStamped>(
-             "/mavros/setpoint_velocity/cmd_vel", 10),
-         led_pub = nh.advertise<std_msgs::Int32>("/led", 10),
-         servo_pub = nh.advertise<std_msgs::Int32>("/servo", 10),
          screen_data_pub = nh.advertise<screen::goods_info>("/screen_data", 10);
 
     auto arming_client =
@@ -118,6 +113,7 @@ int main(int argc, char **argv) {
     mavros_msgs::CommandBool arm_cmd;
     arm_cmd.request.value = true;
 
+wait_for_command:
     ros::Time last_request = ros::Time::now();
 
     size_t target_index = 0;
@@ -130,6 +126,8 @@ int main(int argc, char **argv) {
 
     if (offboard_order.data == 2)
         mode = 2;
+    scanned = false;
+    offboard_order.data = 0;
 
     while (ros::ok()) {
         if (!current_state.armed &&
@@ -198,9 +196,12 @@ int main(int argc, char **argv) {
                 targets[target_index].fly_to_target(local_pos_pub);
             }
         } else if (mode == 2) { // 发挥部分
+            if (scanned) {
+            }
         }
         ros::spinOnce();
         rate.sleep();
     }
+    goto wait_for_command;
     return 0;
 }
