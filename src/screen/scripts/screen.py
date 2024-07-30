@@ -5,9 +5,104 @@ from std_msgs.msg import Int32
 from screen.msg import goods_info
 import json
 
-# 读取json文件
-with open('goods_info.json', 'r') as json_file:
-    json_data = json.load(json_file)
+json_data={
+    "A3": {
+        "value": -1,
+        "coordinate": [0.0, 0.75, 1.25, 0]
+    },
+    "A2": {
+        "value": -1,
+        "coordinate": [0.0, 1.25, 1.25, 0]
+    },
+    "A1": {
+        "value": -1,
+        "coordinate": [0.0, 1.75, 1.25, 0]
+    },
+    "A4": {
+        "value": -1,
+        "coordinate": [0.0, 1.75, 0.85, 0]
+    },
+    "A5": {
+        "value": -1,
+        "coordinate": [0.0, 1.25, 0.85, 0]
+    },
+    "A6": {
+        "value": -1,
+        "coordinate": [0.0, 0.75, 0.85, 0]
+    },
+    "C6": {
+        "value": -1,
+        "coordinate": [1.75, 0.75, 0.85, 0]
+    },
+    "C5": {
+        "value": -1,
+        "coordinate": [1.75, 1.25, 0.85, 0]
+    },
+    "C4": {
+        "value": -1,
+        "coordinate": [1.75, 1.75, 0.85, 0]
+    },
+    "C1": {
+        "value": -1,
+        "coordinate": [1.75, 1.75, 1.25, 0]
+    },
+    "C2": {
+        "value": -1,
+        "coordinate": [1.75, 1.25, 1.25, 0]
+    },
+    "C3": {
+        "value": -1,
+        "coordinate": [1.75, 0.75, 1.25, 0]
+    },
+    "B1": {
+        "value": -1,
+        "coordinate": [1.75, 0.75, 1.25, 3.14159]
+    },
+    "B2": {
+        "value": -1,
+        "coordinate": [1.75, 1.25, 1.25, 3.14159]
+    },
+    "B3": {
+        "value": -1,
+        "coordinate": [1.75, 1.75, 1.25, 3.14159]
+    },
+    "B4": {
+        "value": -1,
+        "coordinate": [1.75, 0.75, 0.85, 3.14159]
+    },
+    "B5": {
+        "value": -1,
+        "coordinate": [1.75, 1.25, 0.85, 3.14159]
+    },
+    "B6": {
+        "value": -1,
+        "coordinate": [1.75, 0.75, 0.85, 3.14159]
+    },
+    "D4": {
+        "value": -1,
+        "coordinate": [3.50, 0.75, 0.85, 3.14159]
+    },
+    "D5": {
+        "value": -1,
+        "coordinate": [3.50, 1.25, 0.85, 3.14159]
+    },
+    "D6": {
+        "value": -1,
+        "coordinate": [3.50, 1.75, 0.85, 3.14159]
+    },
+    "D1": {
+        "value": -1,
+        "coordinate": [3.50, 1.75, 1.25, 3.14159]
+    },
+    "D2": {
+        "value": -1,
+        "coordinate": [3.50, 1.25, 1.25, 3.14159]
+    },
+    "D3": {
+        "value": -1,
+        "coordinate": [3.50, 0.75, 1.25, 3.14159]
+    }
+}
 
 # 查询value
 def query_value(address):
@@ -23,7 +118,7 @@ def query_coordinate(address):
 def update_json_value(address, new_value):
     if address in json_data:
         json_data[address] = new_value
-        return json_data
+        # return json_data
     else:
         # 如果键不存在，可以选择抛出异常或者返回原始数据
         raise ValueError(f"Key '{address}' not found in JSON data.")
