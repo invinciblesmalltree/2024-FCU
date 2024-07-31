@@ -221,7 +221,7 @@ wait_for_command:
     }
 
     // 识别到二维码
-    ROS_INFO("Barcode detected: %d", last_scan);
+    ROS_INFO("Barcode detected: %d", barcode_data.data);
     trx_screen::goods_info goods_info;
     goods_info.value = barcode_data.data;
     goods_info.address = "kun";
