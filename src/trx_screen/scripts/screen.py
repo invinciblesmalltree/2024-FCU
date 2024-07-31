@@ -68,6 +68,21 @@ def search_all():
         ser.write(f"page4.n{i}.val={value['value']}".encode("utf-8") + b"\xff\xff\xff")
         i += 1
 
+#飞机地图对于串口屏地图的映射函数
+def get_screen_coordinates(plane_x, plane_y):
+    # 飞机地图的起点和终点
+    plane_start = (0.0, 0.0)
+    plane_end = (3.5, 2.5)
+    # 串口屏的起点和终点
+    screen_start = (200, 242)
+    screen_end = (405, 98)
+    # 计算比例因子
+    x_ratio = (screen_end[0] - screen_start[0]) / (plane_end[0] - plane_start[0])
+    y_ratio = (screen_end[1] - screen_start[1]) / (plane_end[1] - plane_start[1])
+    # 将飞机坐标转换为串口屏坐标
+    screen_x = screen_start[0] + (plane_x - plane_start[0]) * x_ratio
+    screen_y = screen_start[1] + (plane_y - plane_start[1]) * y_ratio
+    return round(screen_x)
 
 # 货物编号为1～24的数值；坐标信息为A1~A6、B1~B6、C1~C6、D1~D6
 def goods_callback(msg):
@@ -80,6 +95,10 @@ def goods_callback(msg):
         coordinate.z=query_coordinate(get_address_by_value(msg.value))[2]
         coordinate.yaw=query_coordinate(get_address_by_value(msg.value))[3]
         path_pub.publish(coordinate)
+        #在串口屏上绘制飞行路径
+        ser.write(f"line 200,242,{get_screen_coordinates(coordinate.x,coordinate.y)},242,RED".encode("utf-8") + b"\xff\xff\xff")
+        ser.write(f"line {get_screen_coordinates(coordinate.x,coordinate.y)},242,{get_screen_coordinates(coordinate.x,coordinate.y)},98,RED".encode("utf-8") + b"\xff\xff\xff")
+        ser.write(f"line {get_screen_coordinates(coordinate.x,coordinate.y)},98,405,98,RED".encode("utf-8") + b"\xff\xff\xff")
         return
     update_json_value(msg.address, msg.value)
     ser.write(f'page1.t4.txt="{msg.value}"'.encode("utf-8") + b"\xff\xff\xff")
