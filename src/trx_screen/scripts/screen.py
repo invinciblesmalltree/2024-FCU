@@ -72,12 +72,13 @@ def search_all():
 
 # 货物编号为1～24的数值；坐标信息为A1~A6、B1~B6、C1~C6、D1~D6
 def goods_callback(msg):
+    if msg.address == -1:
+        ser.write(f'page2.n0.val={msg.value}'.encode("utf-8") + b"\xff\xff\xff")
+        return
     update_json_value(msg.address, msg.value)
     ser.write(f'page1.t4.txt="{msg.value}"'.encode("utf-8") + b"\xff\xff\xff")
-    ser.write(
-        f'page1.t6.txt="{msg.address}"'.encode("utf-8") + b"\xff\xff\xff"
-    )  # 实时发送编号及坐标至串口屏
-
+    ser.write(f'page1.t6.txt="{msg.address}"'.encode("utf-8") + b"\xff\xff\xff")  # 实时发送编号及坐标至串口屏
+    
 
 # 主程序
 rospy.init_node("screen", anonymous=True)

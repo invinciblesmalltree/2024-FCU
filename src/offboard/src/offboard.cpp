@@ -30,11 +30,14 @@ int main(int argc, char **argv) {
     std_msgs::Int32 barcode_data, offboard_order;
 
     bool scanned = false;
+    int last_scan=-1;
 
-    auto barcode_cb = [&barcode_data, &scanned](const auto &msg) {
+    auto barcode_cb = [&barcode_data,&last_scan, &scanned](const auto &msg) {
         barcode_data = *msg;
-        if (barcode_data.data != -1)
+        if (barcode_data.data != -1){
+            last_scan=barcode_data.data;
             scanned = true;
+        }
     };
 
     auto state_sub = subscribe(nh, "/mavros/state", current_state),
@@ -116,18 +119,16 @@ int main(int argc, char **argv) {
 wait_for_command:
     ros::Time last_request = ros::Time::now();
 
-    size_t target_index = 0;
-    int mode = 0;
+    static size_t target_index = 0;
+    static int mode = 0;
+        
+    scanned = false;
+    offboard_order.data = 0;
 
     while (ros::ok() && !offboard_order.data) {
         ros::spinOnce();
         rate.sleep();
     }
-
-    if (offboard_order.data == 2)
-        mode = 2;
-    scanned = false;
-    offboard_order.data = 0;
 
     while (ros::ok()) {
         if (!current_state.armed &&
@@ -196,12 +197,33 @@ wait_for_command:
                 targets[target_index].fly_to_target(local_pos_pub);
             }
         } else if (mode == 2) { // 发挥部分
-            if (scanned) {
-            }
+
         }
         ros::spinOnce();
         rate.sleep();
     }
+
+    //等待扫码
+    do{
+        ros::spinOnce();
+        rate.sleep();
+    }while(!scanned);
+
+    // 识别到二维码
+    ROS_INFO("Barcode detected: %d", last_scan);
+    trx_screen::goods_info goods_info;
+    goods_info.value = barcode_data.data;
+    goods_info.address = -1;
+    goods_info_pub.publish(goods_info); //不完全发送，仅data可用
+
+    //等待命令执行定点飞行
+    do{
+        ros::spinOnce();
+        rate.sleep();
+    }while(offboard_order.data != 2);
+    mode=2;
+
     goto wait_for_command;
+
     return 0;
 }
