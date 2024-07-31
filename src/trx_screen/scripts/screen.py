@@ -2,7 +2,7 @@
 import rospy
 import serial
 from std_msgs.msg import Int32
-from trx_screen.msg import goods_info
+from trx_screen.msg import goods_info, coordinate_info
 import json
 
 json_data = {
@@ -31,7 +31,6 @@ json_data = {
     "D5": {"value": -1, "coordinate": [3.50, 1.25, 0.85, 3.14159]},
     "D6": {"value": -1, "coordinate": [3.50, 1.75, 0.85, 3.14159]},
 }
-
 
 # 查询value
 def query_value(address):
@@ -72,13 +71,20 @@ def search_all():
 
 # 货物编号为1～24的数值；坐标信息为A1~A6、B1~B6、C1~C6、D1~D6
 def goods_callback(msg):
-    if msg.address == -1:
+    if msg.address == 'kun':
         ser.write(f'page2.n0.val={msg.value}'.encode("utf-8") + b"\xff\xff\xff")
+        # 路径发布
+        coordinate=coordinate_info()
+        coordinate.x=query_coordinate(get_address_by_value(msg.value))[0]
+        coordinate.y=query_coordinate(get_address_by_value(msg.value))[1]
+        coordinate.z=query_coordinate(get_address_by_value(msg.value))[2]
+        coordinate.yaw=query_coordinate(get_address_by_value(msg.value))[3]
+        path_pub.publish(coordinate)
         return
     update_json_value(msg.address, msg.value)
     ser.write(f'page1.t4.txt="{msg.value}"'.encode("utf-8") + b"\xff\xff\xff")
     ser.write(f'page1.t6.txt="{msg.address}"'.encode("utf-8") + b"\xff\xff\xff")  # 实时发送编号及坐标至串口屏
-    
+
 
 # 主程序
 rospy.init_node("screen", anonymous=True)
@@ -88,6 +94,8 @@ ser = serial.Serial("/dev/ttyS6", baudrate=9600, timeout=1)
 pub = rospy.Publisher("/offboard_order", Int32, queue_size=10)
 # 从scanner订阅货物信息
 rospy.Subscriber("/goods_info", goods_info, goods_callback)
+# 路径发布者
+path_pub = rospy.Publisher("/coordinate_info", coordinate_info, queue_size=10)
 
 ser.write(b"rest\xff\xff\xff")  # 重置屏幕
 

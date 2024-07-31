@@ -10,6 +10,7 @@
 #include <ros_tools/message_subscriber.h>
 #include <ros_tools/target_class.hpp>
 #include <trx_screen/goods_info.h>
+#include <trx_screen/coordinate_info.h>
 #include <std_msgs/Int32.h>
 #include <string>
 #include <vector>
@@ -28,14 +29,13 @@ int main(int argc, char **argv) {
     mavros_msgs::State current_state;
     ros_tools::LidarPose lidar_pose_data;
     std_msgs::Int32 barcode_data, offboard_order;
+    trx_screen::coordinate_info coordinate_info;
 
     bool scanned = false;
-    int last_scan=-1;
 
-    auto barcode_cb = [&barcode_data,&last_scan, &scanned](const auto &msg) {
+    auto barcode_cb = [&barcode_data, &scanned](const auto &msg) {
         barcode_data = *msg;
         if (barcode_data.data != -1){
-            last_scan=barcode_data.data;
             scanned = true;
         }
     };
@@ -44,7 +44,8 @@ int main(int argc, char **argv) {
          lidar_sub = subscribe(nh, "/lidar_data", lidar_pose_data),
          barcode_sub =
              nh.subscribe<std_msgs::Int32>("/barcode_data", 10, barcode_cb),
-         offboard_sub = subscribe(nh, "/offboard_order", offboard_order);
+         offboard_sub = subscribe(nh, "/offboard_order", offboard_order),
+         coordinate_sub = subscribe(nh, "/coordinate_info", coordinate_info);
 
     auto local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(
              "/mavros/setpoint_position/local", 10),
@@ -197,24 +198,34 @@ wait_for_command:
                 targets[target_index].fly_to_target(local_pos_pub);
             }
         } else if (mode == 2) { // 发挥部分
-
+            std::vector<target> targets2 = {
+                target(0.0, 0.0, 1.25, 0.0),
+                target(0.0, -0.25, 1.25, coordinate_info.yaw),
+                target(coordinate_info.x, 0.0, coordinate_info.z, coordinate_info.yaw),
+                target(coordinate_info.x, coordinate_info.y, coordinate_info.z, coordinate_info.yaw),
+                target(coordinate_info.x, 2.75, coordinate_info.z, coordinate_info.yaw),
+                target(0.0, 2.75, 1.25, coordinate_info.yaw),
+                target(0.0, 2.5, 1.25, 0.0),
+                target(0.0, 2.5, 0.10, 0.0),
+            }
+            target.fly_to_target
         }
         ros::spinOnce();
         rate.sleep();
     }
 
     //等待扫码
-    do{
+    while(ros::ok() && !scanned){
         ros::spinOnce();
         rate.sleep();
-    }while(!scanned);
+    }
 
     // 识别到二维码
     ROS_INFO("Barcode detected: %d", last_scan);
     trx_screen::goods_info goods_info;
     goods_info.value = barcode_data.data;
-    goods_info.address = -1;
-    goods_info_pub.publish(goods_info); //不完全发送，仅data可用
+    goods_info.address = "kun";
+    goods_info_pub.publish(goods_info); //不完全发送，仅value可用
 
     //等待命令执行定点飞行
     do{
