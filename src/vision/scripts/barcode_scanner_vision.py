@@ -41,7 +41,7 @@ def callback(data):
     # cv.imshow("Barcode", frame)
     # cv.waitKey(1)
     if barcodes:
-        barcode_data = barcodes[0].data.decode("utf-8")
+        barcode_data = barcodes[0].data.decode()
         if not barcode_data.isdigit():
             pub.publish(-1)
             return

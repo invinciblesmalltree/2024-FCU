@@ -1,4 +1,5 @@
 <launch>
     <node pkg="ros_tools" type="pose_data_node" name="pose_data_node" />
-    <node pkg="offboard" type="offboard" name="offboard"  output="screen" />
+    <node pkg="trx_screen" type="screen.py" name="screen" />
+    <node pkg="offboard" type="offboard" name="offboard" output="screen" />
 </launch>

@@ -140,20 +140,20 @@ int main(int argc, char **argv) {
     std_msgs::Int32 laser_and_led_order;
     laser_and_led_order.data = 1;
 
+    size_t target_index = 0, target_index2 = 0;
+    int mode = 0;
+
 wait_for_command:
-    ros::Time last_request = ros::Time::now();
-
-    static size_t target_index = 0;
-    static size_t target_index2 = 0;
-    static int mode = 0;
-
-    scanned = false;
     offboard_order.data = 0;
 
     while (ros::ok() && !offboard_order.data) {
         ros::spinOnce();
         rate.sleep();
     }
+
+    ros::Time last_request = ros::Time::now();
+
+    scanned = false;
 
     if (offboard_order.data == 2) {
         mode = 2;
@@ -248,7 +248,7 @@ wait_for_command:
                 targets[target_index].fly_to_target(local_pos_pub);
             }
         } else if (mode == 2) { // 发挥部分
-            if (target_index2 >= targets.size()) {
+            if (target_index2 >= targets2.size()) {
                 ROS_INFO("All targets2 reached");
                 mavros_msgs::CommandLong command_srv;
                 command_srv.request.broadcast = false;
@@ -279,13 +279,8 @@ wait_for_command:
         rate.sleep();
     }
 
-    // 等待扫码
-    while (ros::ok() && !scanned) {
-        ros::spinOnce();
-        rate.sleep();
-    }
-
-    goto wait_for_command;
+    if (offboard_order.data == 1)
+        goto wait_for_command;
 
     return 0;
 }
