@@ -101,6 +101,17 @@ int main(int argc, char **argv) {
         target(3.50, 2.5, 1.25, M_PI),   target(3.50, 2.5, 0.10, M_PI) // 降落
     };
 
+    std::vector<target> targets2 = {
+        target(0.0, 0.0, 1.25, 0.0),
+        target(0.0, -0.25, 1.25, coordinate_info.yaw),
+        target(coordinate_info.x, 0.0, coordinate_info.z, coordinate_info.yaw),
+        target(coordinate_info.x, coordinate_info.y, coordinate_info.z, coordinate_info.yaw),
+        target(coordinate_info.x, 2.75, coordinate_info.z, coordinate_info.yaw),
+        target(0.0, 2.75, 1.25, coordinate_info.yaw),
+        target(0.0, 2.5, 1.25, 0.0),
+        target(0.0, 2.5, 0.10, 0.0),
+    };
+
     std::vector<std::string> addresses = {
         "",   "A3", "A2", "A1", "A4", "A5", "A6", "",   "",   "C6",
         "C5", "C4", "C1", "C2", "C3", "",   "B1", "B2", "B3", "B6",
@@ -121,6 +132,7 @@ wait_for_command:
     ros::Time last_request = ros::Time::now();
 
     static size_t target_index = 0;
+    static size_t target_index2 = 0;
     static int mode = 0;
         
     scanned = false;
@@ -198,17 +210,28 @@ wait_for_command:
                 targets[target_index].fly_to_target(local_pos_pub);
             }
         } else if (mode == 2) { // 发挥部分
-            std::vector<target> targets2 = {
-                target(0.0, 0.0, 1.25, 0.0),
-                target(0.0, -0.25, 1.25, coordinate_info.yaw),
-                target(coordinate_info.x, 0.0, coordinate_info.z, coordinate_info.yaw),
-                target(coordinate_info.x, coordinate_info.y, coordinate_info.z, coordinate_info.yaw),
-                target(coordinate_info.x, 2.75, coordinate_info.z, coordinate_info.yaw),
-                target(0.0, 2.75, 1.25, coordinate_info.yaw),
-                target(0.0, 2.5, 1.25, 0.0),
-                target(0.0, 2.5, 0.10, 0.0),
+            if (target_index2 >= targets.size()) {
+                ROS_INFO("All targets2 reached");
+                mavros_msgs::CommandLong command_srv;
+                command_srv.request.broadcast = false;
+                command_srv.request.command = 21;
+                command_srv.request.confirmation = 0;
+                command_srv.request.param4 = 0;
+                if (command_client.call(command_srv) &&
+                    command_srv.response.success) {
+                    ROS_INFO("Land command sent successfully");
+                }
+                break;
+            } else if (!targets2[target_index].pos_check(lidar_pose_data, 0.05,
+                                                        0.05, 0.02)) {
+                targets2[target_index].fly_to_target(local_pos_pub);
+            } else {
+                ROS_INFO("Reached target %zu", target_index);
+                if (need_scan(target_index)) {
+                    mode = 1;
+                } else
+                    target_index++;
             }
-            target.fly_to_target
         }
         ros::spinOnce();
         rate.sleep();
