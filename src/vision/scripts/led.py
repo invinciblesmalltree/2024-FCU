@@ -1,30 +1,24 @@
 #!/usr/bin/env python
 
-import os
-import sys
-
-if os.geteuid() != 0:
-    os.execvp("sudo", ["sudo"] + ["python3"] + sys.argv)
-
 import rospy
 from std_msgs.msg import Int32
-import OPi.GPIO as GPIO
+import os
 
 
 def callback(data):
     if data.data != -1:
-        GPIO.output(37, GPIO.HIGH)
+        os.system("gpio write 25 1")
         rospy.sleep(1)
-        GPIO.output(37, GPIO.LOW)
+        os.system("gpio write 25 0")
 
 
 if __name__ == "__main__":
     rospy.init_node("led_node")
     pub = rospy.Subscriber("laser_and_led_order", Int32, callback)
 
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(37, GPIO.OUT)
-    GPIO.output(37, GPIO.LOW)
+    os.system("gpio mode 25 out")
+    os.system("gpio write 25 0")
 
     rospy.loginfo("LED node started.")
     rospy.spin()
+    os.system("gpio mode 25 in")
