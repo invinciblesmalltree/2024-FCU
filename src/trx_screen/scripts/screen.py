@@ -95,10 +95,15 @@ def goods_callback(msg):
         coordinate.z=query_coordinate(get_address_by_value(msg.value))[2]
         coordinate.yaw=query_coordinate(get_address_by_value(msg.value))[3]
         path_pub.publish(coordinate)
+        quest_goods_info=msg
         #在串口屏上绘制飞行路径
         ser.write(f"line 200,242,{get_screen_coordinates(coordinate.x,coordinate.y)},242,RED".encode("utf-8") + b"\xff\xff\xff")
         ser.write(f"line {get_screen_coordinates(coordinate.x,coordinate.y)},242,{get_screen_coordinates(coordinate.x,coordinate.y)},98,RED".encode("utf-8") + b"\xff\xff\xff")
         ser.write(f"line {get_screen_coordinates(coordinate.x,coordinate.y)},98,405,98,RED".encode("utf-8") + b"\xff\xff\xff")
+        return
+    elif msg.address=='heizi':
+        ser.write(f'page1.t4.txt="{quest_goods_info.value}"'.encode("utf-8") + b"\xff\xff\xff")
+        ser.write(f'page1.t6.txt="{quest_goods_info.address}"'.encode("utf-8") + b"\xff\xff\xff")
         return
     update_json_value(msg.address, msg.value)
     ser.write(f'page1.t4.txt="{msg.value}"'.encode("utf-8") + b"\xff\xff\xff")
