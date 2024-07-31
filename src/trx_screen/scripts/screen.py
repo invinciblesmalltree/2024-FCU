@@ -87,7 +87,7 @@ def goods_callback(msg):
         ser.write(f"page2.n0.val={msg.value}".encode() + b"\xff\xff\xff")
         # 路径发布
         coordinate_msg = coordinate_info()
-        coordinate = json_data(get_address_by_value(msg.value))
+        coordinate = json_data[get_address_by_value(msg.value)]["coordinate"]
         coordinate_msg.x = coordinate[0]
         coordinate_msg.y = coordinate[1]
         coordinate_msg.z = coordinate[2]
@@ -125,7 +125,7 @@ def goods_callback(msg):
 # 主程序
 rospy.init_node("screen", anonymous=True)
 # 配置串口
-ser = serial.Serial("/tmp/ttyS6", baudrate=9600, timeout=1)
+ser = serial.Serial("/dev/ttyS6", baudrate=9600, timeout=1)
 # 起飞发布，发1为盘点程序，发2为定向程序
 pub = rospy.Publisher("/offboard_order", Int32, queue_size=10)
 # 从scanner订阅货物信息
