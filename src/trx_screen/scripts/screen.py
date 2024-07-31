@@ -113,7 +113,7 @@ def goods_callback(msg):
 # 主程序
 rospy.init_node("screen", anonymous=True)
 # 配置串口
-ser = serial.Serial("/tmp/ttyS6", baudrate=9600, timeout=1)
+ser = serial.Serial("/dev/ttyS6", baudrate=9600, timeout=1)
 # 起飞发布，发1为盘点程序，发2为定向程序
 pub = rospy.Publisher("/offboard_order", Int32, queue_size=10)
 # 从scanner订阅货物信息

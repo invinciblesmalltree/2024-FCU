@@ -67,7 +67,9 @@ int main(int argc, char **argv) {
     auto local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(
              "/mavros/setpoint_position/local", 10),
          goods_info_pub =
-             nh.advertise<trx_screen::goods_info>("/goods_info", 10);
+             nh.advertise<trx_screen::goods_info>("/goods_info", 10),
+         laser_and_led_pub =
+             nh.advertise<std_msgs::Int32>("/laser_and_led_order", 10);
 
     auto arming_client =
              nh.serviceClient<mavros_msgs::CommandBool>("/mavros/cmd/arming"),
@@ -134,6 +136,9 @@ int main(int argc, char **argv) {
 
     mavros_msgs::CommandBool arm_cmd;
     arm_cmd.request.value = true;
+
+    std_msgs::Int32 laser_and_led_order;
+    laser_and_led_order.data = 1;
 
 wait_for_command:
     ros::Time last_request = ros::Time::now();
@@ -233,6 +238,8 @@ wait_for_command:
                 goods_info.value = barcode_data.data;
                 goods_info.address = addresses[target_index];
                 goods_info_pub.publish(goods_info);
+                laser_and_led_pub.publish(laser_and_led_order);
+                ros::Duration(0.5).sleep();
                 target_index++;
                 mode = 0;
                 scanned = false;
@@ -262,6 +269,8 @@ wait_for_command:
                     trx_screen::goods_info goods_info;
                     goods_info.address = "heizi";
                     goods_info_pub.publish(goods_info); // 货物信息回传
+                    laser_and_led_pub.publish(laser_and_led_order);
+                    ros::Duration(0.5).sleep();
                 }
                 target_index2++;
             }
