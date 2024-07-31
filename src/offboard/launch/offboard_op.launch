@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="vision" type="led.py" name="led" />
+    <node pkg="trx_screen" type="screen.py" name="screen" />
+</launch>
