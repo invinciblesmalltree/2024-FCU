@@ -80,6 +80,11 @@ def goods_callback(msg):
         coordinate.z=query_coordinate(get_address_by_value(msg.value))[2]
         coordinate.yaw=query_coordinate(get_address_by_value(msg.value))[3]
         path_pub.publish(coordinate)
+        quest_goods_info=msg
+        return
+    elif msg.address=='heizi':
+        ser.write(f'page1.t4.txt="{quest_goods_info.value}"'.encode("utf-8") + b"\xff\xff\xff")
+        ser.write(f'page1.t6.txt="{quest_goods_info.address}"'.encode("utf-8") + b"\xff\xff\xff")
         return
     update_json_value(msg.address, msg.value)
     ser.write(f'page1.t4.txt="{msg.value}"'.encode("utf-8") + b"\xff\xff\xff")
@@ -89,7 +94,7 @@ def goods_callback(msg):
 # 主程序
 rospy.init_node("screen", anonymous=True)
 # 配置串口
-ser = serial.Serial("/dev/ttyS6", baudrate=9600, timeout=1)
+ser = serial.Serial("/tmp/ttyS6", baudrate=9600, timeout=1)
 # 起飞发布，发1为盘点程序，发2为定向程序
 pub = rospy.Publisher("/offboard_order", Int32, queue_size=10)
 # 从scanner订阅货物信息

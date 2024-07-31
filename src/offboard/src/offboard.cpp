@@ -9,10 +9,10 @@
 #include <ros_tools/LidarPose.h>
 #include <ros_tools/message_subscriber.h>
 #include <ros_tools/target_class.hpp>
-#include <trx_screen/goods_info.h>
-#include <trx_screen/coordinate_info.h>
 #include <std_msgs/Int32.h>
 #include <string>
+#include <trx_screen/coordinate_info.h>
+#include <trx_screen/goods_info.h>
 #include <vector>
 
 bool need_scan(int target_index) {
@@ -29,15 +29,31 @@ int main(int argc, char **argv) {
     mavros_msgs::State current_state;
     ros_tools::LidarPose lidar_pose_data;
     std_msgs::Int32 barcode_data, offboard_order;
-    trx_screen::coordinate_info coordinate_info;
 
     bool scanned = false;
 
     auto barcode_cb = [&barcode_data, &scanned](const auto &msg) {
         barcode_data = *msg;
-        if (barcode_data.data != -1){
+        if (barcode_data.data != -1) {
             scanned = true;
         }
+    };
+
+    std::vector<target> targets2;
+
+    auto coordinate_cb = [&targets2](const auto &msg) {
+        trx_screen::coordinate_info coordinate_info = *msg;
+        targets2 = {target(0, 0, 1.25, 0),
+                    target(0, -0.25, 1.25, coordinate_info.yaw),
+                    target(coordinate_info.x, -0.25, coordinate_info.z,
+                           coordinate_info.yaw),
+                    target(coordinate_info.x, coordinate_info.y,
+                           coordinate_info.z, coordinate_info.yaw),
+                    target(coordinate_info.x, 2.75, coordinate_info.z,
+                           coordinate_info.yaw),
+                    target(3.5, 2.75, coordinate_info.z, coordinate_info.yaw),
+                    target(3.5, 2.5, coordinate_info.z, 0),
+                    target(3.5, 2.5, 0.1, 0)};
     };
 
     auto state_sub = subscribe(nh, "/mavros/state", current_state),
@@ -45,11 +61,13 @@ int main(int argc, char **argv) {
          barcode_sub =
              nh.subscribe<std_msgs::Int32>("/barcode_data", 10, barcode_cb),
          offboard_sub = subscribe(nh, "/offboard_order", offboard_order),
-         coordinate_sub = subscribe(nh, "/coordinate_info", coordinate_info);
+         coordinate_sub = nh.subscribe<trx_screen::coordinate_info>(
+             "/coordinate_info", 10, coordinate_cb);
 
     auto local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(
              "/mavros/setpoint_position/local", 10),
-         goods_info_pub = nh.advertise<trx_screen::goods_info>("/goods_info", 10);
+         goods_info_pub =
+             nh.advertise<trx_screen::goods_info>("/goods_info", 10);
 
     auto arming_client =
              nh.serviceClient<mavros_msgs::CommandBool>("/mavros/cmd/arming"),
@@ -101,17 +119,6 @@ int main(int argc, char **argv) {
         target(3.50, 2.5, 1.25, M_PI),   target(3.50, 2.5, 0.10, M_PI) // 降落
     };
 
-    std::vector<target> targets2 = {
-        target(0.0, 0.0, 1.25, 0.0),
-        target(0.0, -0.25, 1.25, coordinate_info.yaw),
-        target(coordinate_info.x, 0.0, coordinate_info.z, coordinate_info.yaw),
-        target(coordinate_info.x, coordinate_info.y, coordinate_info.z, coordinate_info.yaw),
-        target(coordinate_info.x, 2.75, coordinate_info.z, coordinate_info.yaw),
-        target(0.0, 2.75, 1.25, coordinate_info.yaw),
-        target(0.0, 2.5, 1.25, 0.0),
-        target(0.0, 2.5, 0.10, 0.0),
-    };
-
     std::vector<std::string> addresses = {
         "",   "A3", "A2", "A1", "A4", "A5", "A6", "",   "",   "C6",
         "C5", "C4", "C1", "C2", "C3", "",   "B1", "B2", "B3", "B6",
@@ -134,13 +141,37 @@ wait_for_command:
     static size_t target_index = 0;
     static size_t target_index2 = 0;
     static int mode = 0;
-        
+
     scanned = false;
     offboard_order.data = 0;
 
     while (ros::ok() && !offboard_order.data) {
         ros::spinOnce();
         rate.sleep();
+    }
+
+    if (offboard_order.data == 2) {
+        mode = 2;
+        while (!scanned) {
+            ros::spinOnce();
+            rate.sleep();
+        }
+        // 识别到二维码
+        ROS_INFO("Barcode detected: %d", barcode_data.data);
+        trx_screen::goods_info goods_info;
+        goods_info.value = barcode_data.data;
+        goods_info.address = "kun";
+        goods_info_pub.publish(goods_info); // 不完全发送，仅value可用
+        scanned = false;
+        while (!targets2.size()) {
+            ros::spinOnce();
+            rate.sleep();
+        }
+        offboard_order.data = 0;
+        while (ros::ok() && !offboard_order.data) {
+            ros::spinOnce();
+            rate.sleep();
+        }
     }
 
     while (ros::ok()) {
@@ -222,40 +253,28 @@ wait_for_command:
                     ROS_INFO("Land command sent successfully");
                 }
                 break;
-            } else if (!targets2[target_index].pos_check(lidar_pose_data, 0.05,
-                                                        0.05, 0.02)) {
-                targets2[target_index].fly_to_target(local_pos_pub);
+            } else if (!targets2[target_index2].pos_check(lidar_pose_data, 0.05,
+                                                          0.05, 0.02)) {
+                targets2[target_index2].fly_to_target(local_pos_pub);
             } else {
-                ROS_INFO("Reached target %zu", target_index);
-                if (need_scan(target_index)) {
-                    mode = 1;
-                } else
-                    target_index++;
+                ROS_INFO("Reached target %zu", target_index2);
+                if (target_index2 == 3) {
+                    trx_screen::goods_info goods_info;
+                    goods_info.address = "heizi";
+                    goods_info_pub.publish(goods_info); // 货物信息回传
+                }
+                target_index2++;
             }
         }
         ros::spinOnce();
         rate.sleep();
     }
 
-    //等待扫码
-    while(ros::ok() && !scanned){
+    // 等待扫码
+    while (ros::ok() && !scanned) {
         ros::spinOnce();
         rate.sleep();
     }
-
-    // 识别到二维码
-    ROS_INFO("Barcode detected: %d", barcode_data.data);
-    trx_screen::goods_info goods_info;
-    goods_info.value = barcode_data.data;
-    goods_info.address = "kun";
-    goods_info_pub.publish(goods_info); //不完全发送，仅value可用
-
-    //等待命令执行定点飞行
-    do{
-        ros::spinOnce();
-        rate.sleep();
-    }while(offboard_order.data != 2);
-    mode=2;
 
     goto wait_for_command;
 
