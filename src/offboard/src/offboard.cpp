@@ -9,6 +9,7 @@
 #include <ros_tools/LidarPose.h>
 #include <ros_tools/message_subscriber.h>
 #include <ros_tools/target_class.hpp>
+#include <std_msgs/Float32.h>
 #include <std_msgs/Int32.h>
 #include <string>
 #include <trx_screen/coordinate_info.h>
@@ -29,6 +30,7 @@ int main(int argc, char **argv) {
     mavros_msgs::State current_state;
     ros_tools::LidarPose lidar_pose_data;
     std_msgs::Int32 barcode_data, barcode_data_vision, offboard_order;
+    std_msgs::Float32 vert_deviation;
 
     bool scanned = false;
 
@@ -64,7 +66,8 @@ int main(int argc, char **argv) {
              subscribe(nh, "/barcode_data_vision", barcode_data_vision),
          offboard_sub = subscribe(nh, "/offboard_order", offboard_order),
          coordinate_sub = nh.subscribe<trx_screen::coordinate_info>(
-             "/coordinate_info", 10, coordinate_cb);
+             "/coordinate_info", 10, coordinate_cb),
+         vert_deviation_sub = subscribe(nh, "/vert_deviation", vert_deviation);
 
     auto local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(
              "/mavros/setpoint_position/local", 10),
@@ -249,14 +252,17 @@ wait_for_command:
                     target_index++;
                     mode = 0;
                     scanned = false;
-                    has_scanned[barcode_data.data] = true;
+                    if (barcode_data.data > 0)
+                        has_scanned[barcode_data.data] = true;
                 }
             } else {
                 // 未识别到二维码，巡线
+                targets[target_index].z += vert_deviation.data; // 视觉修正
                 targets[target_index].fly_to_target(local_pos_pub);
                 if (ros::Time::now() - last_request > ros::Duration(3.0)) {
                     // 改用视觉识别
-                    ROS_INFO("Barcode detected: %d", barcode_data_vision.data);
+                    ROS_INFO("Barcode detected by vision: %d",
+                             barcode_data_vision.data);
                     trx_screen::goods_info goods_info;
                     goods_info.value = barcode_data_vision.data;
                     goods_info.address = addresses[target_index];
@@ -266,7 +272,8 @@ wait_for_command:
                     target_index++;
                     mode = 0;
                     scanned = false;
-                    has_scanned[barcode_data.data] = true;
+                    if (barcode_data_vision.data > 0)
+                        has_scanned[barcode_data_vision.data] = true;
                 }
             }
         } else if (mode == 2) { // 发挥部分
@@ -288,6 +295,12 @@ wait_for_command:
             } else {
                 ROS_INFO("Reached target %zu", target_index2);
                 if (target_index2 == 3) {
+                    while (abs(vert_deviation.data) > 0.1) {
+                        targets2[target_index2].z += vert_deviation.data;
+                        targets2[target_index2].fly_to_target(local_pos_pub);
+                        ros::spinOnce();
+                        rate.sleep();
+                    }
                     trx_screen::goods_info goods_info;
                     goods_info.address = "heizi";
                     goods_info_pub.publish(goods_info); // 货物信息回传

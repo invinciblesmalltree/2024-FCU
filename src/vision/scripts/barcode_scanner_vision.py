@@ -4,14 +4,9 @@ import rospy
 from pyzbar.pyzbar import decode
 from sensor_msgs.msg import Image
 from std_msgs.msg import Int32
+from std_msgs.msg import Float32
 from cv_bridge import CvBridge, CvBridgeError
 import cv2 as cv
-
-
-def binarize_image(image, threshold_value=127):
-    gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    _, binary_image = cv.threshold(gray_image, threshold_value, 255, cv.THRESH_BINARY)
-    return binary_image
 
 
 def get_center_point(points):
@@ -28,13 +23,12 @@ def callback(data):
         frame = bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
         rospy.logerr(e)
-    frame = binarize_image(frame)
 
     try:
         barcodes = decode(frame)
     except Exception as e:
         rospy.logerr(f"Barcode decoding failed: {e}")
-        pub.publish(-1)
+        barcode_data_pub.publish(-1)
         return
 
     if barcodes:
@@ -55,23 +49,26 @@ def callback(data):
 
         if closest_barcode:
             barcode_data = closest_barcode.data.decode()
+            barcode_center = get_center_point(closest_barcode.polygon)
             if not barcode_data.isdigit():
-                pub.publish(-1)
+                barcode_data_pub.publish(-1)
+                vert_deviation_pub.publish(0)
                 return
-            try:
-                barcode_data = int(barcode_data)
-            except ValueError:
-                pub.publish(-1)
-                return
-            pub.publish(barcode_data)
+            barcode_data = int(barcode_data)
+            barcode_data_pub.publish(barcode_data)
+            vert_deviation_pub.publish(
+                (image_center[1] - barcode_center[1] - 100) / 1000
+            )
             return
 
-    pub.publish(-1)
+    barcode_data_pub.publish(-1)
+    vert_deviation_pub.publish(0)
 
 
 rospy.init_node("barcode", anonymous=True)
 rgb_sub = rospy.Subscriber("/d435/rgb", Image, callback)
-pub = rospy.Publisher("/barcode_data_vision", Int32, queue_size=10)
+barcode_data_pub = rospy.Publisher("/barcode_data_vision", Int32, queue_size=10)
+vert_deviation_pub = rospy.Publisher("/vert_deviation", Float32, queue_size=10)
 
 bridge = CvBridge()
 frame = None
