@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     mavros_msgs::State current_state;
     ros_tools::LidarPose lidar_pose_data;
-    std_msgs::Int32 barcode_data, offboard_order;
+    std_msgs::Int32 barcode_data, barcode_data_vision, offboard_order;
 
     bool scanned = false;
 
@@ -60,6 +60,8 @@ int main(int argc, char **argv) {
          lidar_sub = subscribe(nh, "/lidar_data", lidar_pose_data),
          barcode_sub =
              nh.subscribe<std_msgs::Int32>("/barcode_data", 10, barcode_cb),
+         barcode_vision_sub =
+             subscribe(nh, "/barcode_data_vision", barcode_data_vision),
          offboard_sub = subscribe(nh, "/offboard_order", offboard_order),
          coordinate_sub = nh.subscribe<trx_screen::coordinate_info>(
              "/coordinate_info", 10, coordinate_cb);
@@ -126,6 +128,8 @@ int main(int argc, char **argv) {
         "C5", "C4", "C1", "C2", "C3", "",   "B1", "B2", "B3", "B6",
         "B5", "B4", "",   "",   "D4", "D5", "D6", "D1", "D2", "D3"};
 
+    bool has_scanned[25]{};
+
     while (ros::ok() && !current_state.connected) {
         ros::spinOnce();
         rate.sleep();
@@ -150,8 +154,6 @@ wait_for_command:
         ros::spinOnce();
         rate.sleep();
     }
-
-    ros::Time last_request = ros::Time::now();
 
     scanned = false;
 
@@ -178,6 +180,8 @@ wait_for_command:
             rate.sleep();
         }
     }
+
+    ros::Time last_request = ros::Time::now();
 
     while (ros::ok()) {
         if (!current_state.armed &&
@@ -227,25 +231,43 @@ wait_for_command:
                 ROS_INFO("Reached target %zu", target_index);
                 if (need_scan(target_index)) {
                     mode = 1;
+                    last_request = ros::Time::now();
                 } else
                     target_index++;
             }
         } else if (mode == 1) { // 二维码扫描
             if (scanned) {
-                // 识别到二维码，触发动作
-                ROS_INFO("Barcode detected: %d", barcode_data.data);
-                trx_screen::goods_info goods_info;
-                goods_info.value = barcode_data.data;
-                goods_info.address = addresses[target_index];
-                goods_info_pub.publish(goods_info);
-                laser_and_led_pub.publish(laser_and_led_order);
-                ros::Duration(0.5).sleep();
-                target_index++;
-                mode = 0;
-                scanned = false;
+                if (!has_scanned[barcode_data.data]) {
+                    // 识别到二维码，触发动作
+                    ROS_INFO("Barcode detected: %d", barcode_data.data);
+                    trx_screen::goods_info goods_info;
+                    goods_info.value = barcode_data.data;
+                    goods_info.address = addresses[target_index];
+                    goods_info_pub.publish(goods_info);
+                    laser_and_led_pub.publish(laser_and_led_order);
+                    ros::Duration(0.5).sleep();
+                    target_index++;
+                    mode = 0;
+                    scanned = false;
+                    has_scanned[barcode_data.data] = true;
+                }
             } else {
                 // 未识别到二维码，巡线
                 targets[target_index].fly_to_target(local_pos_pub);
+                if (ros::Time::now() - last_request > ros::Duration(3.0)) {
+                    // 改用视觉识别
+                    ROS_INFO("Barcode detected: %d", barcode_data_vision.data);
+                    trx_screen::goods_info goods_info;
+                    goods_info.value = barcode_data_vision.data;
+                    goods_info.address = addresses[target_index];
+                    goods_info_pub.publish(goods_info);
+                    laser_and_led_pub.publish(laser_and_led_order);
+                    ros::Duration(0.5).sleep();
+                    target_index++;
+                    mode = 0;
+                    scanned = false;
+                    has_scanned[barcode_data.data] = true;
+                }
             }
         } else if (mode == 2) { // 发挥部分
             if (target_index2 >= targets2.size()) {
