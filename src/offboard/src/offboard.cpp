@@ -259,22 +259,6 @@ wait_for_command:
                 // 未识别到二维码，巡线
                 targets[target_index].z += vert_deviation.data; // 视觉修正
                 targets[target_index].fly_to_target(local_pos_pub);
-                if (ros::Time::now() - last_request > ros::Duration(3.0)) {
-                    // 改用视觉识别
-                    ROS_INFO("Barcode detected by vision: %d",
-                             barcode_data_vision.data);
-                    trx_screen::goods_info goods_info;
-                    goods_info.value = barcode_data_vision.data;
-                    goods_info.address = addresses[target_index];
-                    goods_info_pub.publish(goods_info);
-                    laser_and_led_pub.publish(laser_and_led_order);
-                    ros::Duration(0.5).sleep();
-                    target_index++;
-                    mode = 0;
-                    scanned = false;
-                    if (barcode_data_vision.data > 0)
-                        has_scanned[barcode_data_vision.data] = true;
-                }
             }
             if (ros::Time::now() - last_request > ros::Duration(3.0)) {
                 // 改用视觉识别
