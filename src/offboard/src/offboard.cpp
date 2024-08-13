@@ -45,8 +45,8 @@ int main(int argc, char **argv) {
 
     auto coordinate_cb = [&targets2](const auto &msg) {
         trx_screen::coordinate_info coordinate_info = *msg;
-        targets2 = {target(0, 0, 1.25, 0),
-                    target(0, -0.25, 1.25, coordinate_info.yaw),
+        targets2 = {target(0, 0, 1.28, 0),
+                    target(0, -0.25, 1.28, coordinate_info.yaw),
                     target(coordinate_info.x, -0.25, coordinate_info.z,
                            coordinate_info.yaw),
                     target(coordinate_info.x, coordinate_info.y,
@@ -87,43 +87,43 @@ int main(int argc, char **argv) {
     std::vector<target> targets = {
         target(0.0, 0.0, 1.35, 0), // 起飞高度1.5,面西
 
-        target(0.0, 0.75, 1.25, 0), // A3,上排
-        target(0.0, 1.25, 1.25, 0), // A2
-        target(0.0, 1.75, 1.25, 0), // A1
-        target(0.0, 1.75, 0.85, 0), // A4,下排
-        target(0.0, 1.25, 0.85, 0), // A5
-        target(0.0, 0.75, 0.85, 0), // A6
+        target(0.0, 0.75, 1.28, 0), // A3,上排
+        target(0.0, 1.25, 1.28, 0), // A2
+        target(0.0, 1.75, 1.28, 0), // A1
+        target(0.0, 1.75, 0.88, 0), // A4,下排
+        target(0.0, 1.25, 0.88, 0), // A5
+        target(0.0, 0.75, 0.88, 0), // A6
 
-        target(0.00, -0.25, 0.85, 0), // 过面
-        target(1.75, -0.25, 0.85, 0),
+        target(0.00, -0.25, 0.88, 0), // 过面
+        target(1.75, -0.25, 0.88, 0),
 
-        target(1.75, 0.75, 0.85, 0), // C6,下排
-        target(1.75, 1.25, 0.85, 0), // C5
-        target(1.75, 1.75, 0.85, 0), // C4
-        target(1.75, 1.75, 1.25, 0), // C1,上排
-        target(1.75, 1.25, 1.25, 0), // C2
-        target(1.75, 0.75, 1.25, 0), // C3
+        target(1.75, 0.75, 0.88, 0), // C6,下排
+        target(1.75, 1.25, 0.88, 0), // C5
+        target(1.75, 1.75, 0.88, 0), // C4
+        target(1.75, 1.75, 1.28, 0), // C1,上排
+        target(1.75, 1.25, 1.28, 0), // C2
+        target(1.75, 0.75, 1.28, 0), // C3
 
-        target(1.75, 0.75, 1.25, M_PI), // 转向
+        target(1.75, 0.75, 1.28, M_PI), // 转向
 
-        target(1.75, 0.75, 1.25, M_PI), // B1,上排
-        target(1.75, 1.25, 1.25, M_PI), // B2
-        target(1.75, 1.75, 1.25, M_PI), // B3
-        target(1.75, 1.75, 0.85, M_PI), // B6,下排
-        target(1.75, 1.25, 0.85, M_PI), // B5
-        target(1.75, 0.75, 0.85, M_PI), // B4
+        target(1.75, 0.75, 1.28, M_PI), // B1,上排
+        target(1.75, 1.25, 1.28, M_PI), // B2
+        target(1.75, 1.75, 1.28, M_PI), // B3
+        target(1.75, 1.75, 0.88, M_PI), // B6,下排
+        target(1.75, 1.25, 0.88, M_PI), // B5
+        target(1.75, 0.75, 0.88, M_PI), // B4
 
-        target(1.75, -0.25, 0.85, M_PI), // 过面
-        target(3.50, -0.25, 0.85, M_PI),
+        target(1.75, -0.25, 0.88, M_PI), // 过面
+        target(3.50, -0.25, 0.88, M_PI),
 
-        target(3.50, 0.75, 0.85, M_PI), // D4,下排
-        target(3.50, 1.25, 0.85, M_PI), // D5
-        target(3.50, 1.75, 0.85, M_PI), // D6
-        target(3.50, 1.75, 1.25, M_PI), // D1,上排
-        target(3.50, 1.25, 1.25, M_PI), // D2
-        target(3.50, 0.75, 1.25, M_PI), // D3
+        target(3.50, 0.75, 0.88, M_PI), // D4,下排
+        target(3.50, 1.25, 0.88, M_PI), // D5
+        target(3.50, 1.75, 0.88, M_PI), // D6
+        target(3.50, 1.75, 1.28, M_PI), // D1,上排
+        target(3.50, 1.25, 1.28, M_PI), // D2
+        target(3.50, 0.75, 1.28, M_PI), // D3
 
-        target(3.50, 2.5, 1.25, M_PI),   target(3.50, 2.5, 0.10, M_PI) // 降落
+        target(3.50, 2.5, 1.28, M_PI),   target(3.50, 2.5, 0.10, M_PI) // 降落
     };
 
     std::vector<std::string> addresses = {
@@ -276,6 +276,22 @@ wait_for_command:
                         has_scanned[barcode_data_vision.data] = true;
                 }
             }
+            if (ros::Time::now() - last_request > ros::Duration(3.0)) {
+                // 改用视觉识别
+                ROS_INFO("Barcode detected by vision: %d",
+                         barcode_data_vision.data);
+                trx_screen::goods_info goods_info;
+                goods_info.value = barcode_data_vision.data;
+                goods_info.address = addresses[target_index];
+                goods_info_pub.publish(goods_info);
+                laser_and_led_pub.publish(laser_and_led_order);
+                ros::Duration(0.5).sleep();
+                target_index++;
+                mode = 0;
+                scanned = false;
+                if (barcode_data_vision.data > 0)
+                    has_scanned[barcode_data_vision.data] = true;
+            }
         } else if (mode == 2) { // 发挥部分
             if (target_index2 >= targets2.size()) {
                 ROS_INFO("All targets2 reached");
@@ -295,9 +311,12 @@ wait_for_command:
             } else {
                 ROS_INFO("Reached target %zu", target_index2);
                 if (target_index2 == 3) {
+                    last_request = ros::Time::now();
                     while (abs(vert_deviation.data) > 0.1) {
                         targets2[target_index2].z += vert_deviation.data;
                         targets2[target_index2].fly_to_target(local_pos_pub);
+                        if (ros::Time::now() - last_request > ros::Duration(3.0))
+                            break;
                         ros::spinOnce();
                         rate.sleep();
                     }
