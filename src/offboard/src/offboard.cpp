@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
     std::vector<std::string> addresses = {
         "",   "A3", "A2", "A1", "A4", "A5", "A6", "",   "",   "C6",
         "C5", "C4", "C1", "C2", "C3", "",   "B1", "B2", "B3", "B6",
-        "B5", "B4", "",   "",   "D4", "D5", "D6", "D1", "D2", "D3"};
+        "B5", "B4", "",   "",   "D4", "D5", "D6", "D3", "D2", "D1"};
 
     bool has_scanned[25]{};
 
